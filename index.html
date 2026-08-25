@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Kurate Recommendations — Feedback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+/* ── Password gate ───────────────────────────────────────── */
+#gate{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;
+  opacity:1;
+}
+
+.gate-card{
+  display:flex;flex-direction:column;align-items:center;gap:28px;
+  padding:52px 48px 44px;
+  background:rgba(255,255,255,0.72);
+  border:1px solid rgba(52,17,75,0.1);
+  border-radius:20px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:0 8px 48px rgba(52,17,75,0.08),0 2px 12px rgba(52,17,75,0.05);
+  width:min(360px,90vw);
+  animation:gate-in .55s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes gate-in{
+  from{opacity:0;transform:translateY(14px) scale(.97)}
+  to{opacity:1;transform:none}
+}
+
+.gate-brand img{
+  width:64px;height:64px;
+  object-fit:contain;display:block;
+  margin:0 auto
+}
+
+.gate-hint{
+  font-size:.76rem;color:#9b8aaa;letter-spacing:.01em;text-align:center;
+  line-height:1.5;margin-top:-14px
+}
+
+.gate-input-wrap{
+  position:relative;width:100%
+}
+#pwInput{
+  width:100%;
+  padding:13px 46px 13px 16px;
+  border:1.5px solid rgba(52,17,75,0.18);
+  border-radius:10px;
+  font-size:.9rem;font-family:inherit;
+  color:#1a0b24;background:rgba(255,255,255,0.9);
+  outline:none;
+  transition:border-color .18s,box-shadow .18s;
+  letter-spacing:.02em;
+}
+#pwInput::placeholder{letter-spacing:.01em;color:#b8a8c8}
+#pwInput:focus{
+  border-color:#34114b;
+  box-shadow:0 0 0 3px rgba(52,17,75,0.09)
+}
+#pwInput.shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{
+  10%,90%{transform:translateX(-3px)}
+  20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-5px)}
+  40%,60%{transform:translateX(5px)}
+}
+#pwInput.error{border-color:#ff6e60;box-shadow:0 0 0 3px rgba(255,110,96,0.12)}
+
+.eye-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;padding:2px;
+  color:#b8a8c8;transition:color .15s;display:flex;align-items:center
+}
+.eye-btn:hover{color:#34114b}
+
+#gateBtn{
+  width:100%;padding:13px;
+  background:#34114b;color:#fff;
+  border:none;border-radius:10px;
+  font-size:.88rem;font-family:inherit;font-weight:600;
+  cursor:pointer;letter-spacing:.02em;
+  transition:background .15s,transform .12s,box-shadow .15s;
+  box-shadow:0 2px 12px rgba(52,17,75,0.22)
+}
+#gateBtn:hover{background:#4a1a6e;box-shadow:0 4px 18px rgba(52,17,75,0.28)}
+#gateBtn:active{transform:scale(.98)}
+
+#gateErr{
+  font-size:.72rem;color:#ff6e60;
+  height:16px;text-align:center;
+  transition:opacity .2s
+}
+/* ── End password gate ───────────────────────────────────── */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f9f8fb;
+  --surface2: #f0ecf5;
+  --border: #e6e0ed;
+  --text: #1a0b24;
+  --muted: #7c6a8a;
+  --main: #34114b;
+  --accent: #ff6e60;
+  --main-soft: rgba(52,17,75,0.07);
+  --accent-soft: rgba(255,110,96,0.1);
+  --sidebar-w: 260px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;
+  font-size:18px;
+  -webkit-text-size-adjust:100%;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',system-ui,sans-serif;
+  line-height:1.5;
+  overflow:hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+header{
+  height:46px;
+  padding:0 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+  position:sticky;top:0;z-index:100;
+  background:var(--bg);
+}
+.header-left{display:flex;align-items:center;gap:10px}
+.sidebar-toggle{
+  width:32px;height:32px;border:1.5px solid var(--border);border-radius:6px;
+  background:transparent;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0
+}
+.sidebar-toggle:hover{color:var(--main);border-color:var(--main);background:var(--main-soft)}
+.site-title{
+  font-size:.82rem;font-weight:600;letter-spacing:.01em;
+  color:var(--main);white-space:nowrap
+}
+.legend{display:flex;gap:16px;font-size:.72rem;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.content{background:var(--main)}
+.dot.ux{background:var(--accent)}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.app{display:flex;height:calc(100vh - 46px);overflow:hidden}
+
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  border-right:1px solid var(--border);
+  overflow-y:auto;overflow-x:hidden;
+  padding:10px 0;background:var(--surface);
+  transition:width .2s ease,min-width .2s ease,opacity .2s ease,padding .2s ease;
+  flex-shrink:0
+}
+.sidebar.collapsed{width:0;min-width:0;padding:0;opacity:0;pointer-events:none;border-right:none}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.section-label{
+  padding:10px 14px 3px;
+  font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);font-weight:700;white-space:nowrap
+}
+.nav-item{
+  width:100%;border:0;display:flex;align-items:center;gap:8px;
+  padding:7px 14px;background:transparent;cursor:pointer;
+  border-left:2.5px solid transparent;font-size:.78rem;font-family:inherit;
+  text-align:left;color:var(--muted);white-space:nowrap;
+  transition:all .15s
+}
+.nav-item:hover{background:var(--main-soft);color:var(--text)}
+.nav-item.active{background:var(--main-soft);border-left-color:var(--main);color:var(--main);font-weight:600}
+.nav-item .badge{
+  margin-left:auto;font-size:.58rem;background:var(--surface2);
+  border-radius:8px;padding:1px 6px;color:var(--muted);flex-shrink:0
+}
+.nav-item.active .badge{background:rgba(52,17,75,.15);color:var(--main)}
+.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--border)}
+.nav-item.has-notes .nav-dot{background:var(--main)}
+
+/* ── Main ────────────────────────────────────────────────── */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+
+/* ── Screen viewer ───────────────────────────────────────── */
+.screen-viewer{
+  flex:1;min-height:0;
+  padding:24px 48px 20px;
+  display:flex;align-items:flex-start;gap:28px;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-behavior:smooth;
+  scroll-padding-inline:48px;
+  scroll-snap-type:x proximity;
+}
+.screen-viewer::-webkit-scrollbar{height:5px}
+.screen-viewer::-webkit-scrollbar-track{background:var(--surface)}
+.screen-viewer::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.screen-viewer::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+.review-card{
+  flex:0 0 min(480px,calc(100vw - 340px));
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;
+  gap:18px;scroll-snap-align:center;
+  opacity:.45;transform:scale(.97);
+  transition:opacity .25s ease,transform .25s ease;
+  /* no contain — allows comment card to overflow card boundary */
+  overflow:visible
+}
+.review-card.active-screen,.review-card:hover{opacity:1;transform:scale(1);z-index:2;position:relative}
+
+.phone-wrapper{
+  position:relative;flex-shrink:0;
+  width:min(250px,calc(100vw - 380px));
+  overflow:visible;
+  filter:drop-shadow(0 16px 40px rgba(52,17,75,.15))
+}
+.phone-frame{
+  position:relative;overflow:hidden;
+  border-radius:32px;background:#f5f0f8;
+  transition:transform .25s ease
+}
+/* Purple corner overlay — masks screenshot white edges */
+.phone-frame::after{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 2px var(--main);
+  pointer-events:none;z-index:10
+}
+.review-card.active-screen .phone-frame{transform:translateY(-2px)}
+.phone-img{
+  width:100%;
+  height:auto;
+  display:block;
+  max-height:calc(100vh - 180px);
+  object-fit:contain;object-position:top
+}
+
+/* ── Pins ─────────────────────────────────────────────────── */
+.pin{
+  position:absolute;transform:translate(-50%,-50%);
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:.62rem;font-weight:700;z-index:10;
+  border:2px solid rgba(255,255,255,.7);
+  box-shadow:0 4px 14px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .2s,transform .18s,box-shadow .18s;
+  font-family:inherit;user-select:none
+}
+.pin.ready{opacity:.9}
+.pin.content{background:var(--main);color:#fff}
+.pin.ux{background:var(--accent);color:#fff}
+.pin:hover,.pin.active{
+  transform:translate(-50%,-50%) scale(1.18);
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+  opacity:1
+}
+
+/* ── Feedback panel ──────────────────────────────────────── */
+.feedback-panel{width:min(560px,100%);text-align:center}
+.screen-meta{color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.screen-title-area h2{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.empty-state p{font-size:.8rem;color:var(--muted);line-height:1.6;margin-top:6px}
+
+/* ── Comment popup — absolute inside .phone-wrapper, scrolls with card ── */
+.card-popup{
+  position:absolute;
+  width:260px;
+  display:none;
+  z-index:100;
+}
+.comment-card{
+  border:1px solid rgba(52,17,75,.18);border-radius:10px;padding:10px 12px;
+  background:#ffffff !important;
+  box-shadow:0 8px 28px rgba(52,17,75,.16),0 2px 6px rgba(52,17,75,.08);
+  text-align:left
+}
+.comment-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.comment-type{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px}
+.comment-type.content{color:var(--main)}
+.comment-type.ux{color:var(--accent)}
+.comment-title{color:var(--text);font-weight:600;line-height:1.25;font-size:.78rem}
+.comment-close{
+  width:20px;height:20px;border:1px solid var(--border);border-radius:4px;
+  background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .12s
+}
+.comment-close:hover{border-color:var(--main);color:var(--main)}
+.comment-label{margin-top:8px;margin-bottom:2px;color:var(--muted);font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.comment-copy{color:var(--text);font-size:.76rem;line-height:1.55}
+
+/* ── Replies thread ──────────────────────────────────────── */
+.reply-divider{margin:10px 0 7px;border:0;border-top:1px solid var(--border)}
+.replies-header{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.reply-list{display:flex;flex-direction:column}
+.reply-item{padding:5px 0;border-bottom:1px solid var(--surface2)}
+.reply-item:last-child{border-bottom:none}
+.reply-row{display:flex;align-items:baseline;gap:4px;margin-bottom:1px}
+.reply-meta{font-size:.6rem;color:var(--muted);flex:1;min-width:0}
+.reply-meta strong{color:var(--text);font-weight:600}
+.reply-icon-btns{display:flex;gap:1px;flex-shrink:0;}
+.reply-icon-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--border);padding:2px;border-radius:3px;
+  display:flex;align-items:center;transition:color .12s,background .12s
+}
+.reply-icon-btn:hover{color:var(--main);background:var(--main-soft)}
+.reply-icon-btn.del:hover{color:var(--accent);background:var(--accent-soft)}
+.reply-text{font-size:.75rem;color:var(--text);line-height:1.45;word-break:break-word}
+.reply-text-edit{width:100%;border:1px solid var(--main);border-radius:5px;padding:3px 6px;font-size:.75rem;font-family:inherit;color:var(--text);background:#fff;outline:none;resize:none;margin-top:3px}
+.reply-save-btn{font-size:.6rem;font-weight:600;color:#fff;background:var(--main);border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-family:inherit;margin-top:3px}
+.reply-empty{font-size:.68rem;color:var(--muted);padding:3px 0 5px}
+.reply-add{display:flex;gap:4px;align-items:flex-end;padding-top:7px;border-top:1px solid var(--border);margin-top:2px}
+.reply-name-input{width:72px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:.7rem;font-family:inherit;color:var(--text);background:#fff;outline:none}
+.reply-msg-input{flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:.7rem;font-family:inherit;color:var(--text);background:#fff;outline:none;resize:none}
+.reply-name-input:focus,.reply-msg-input:focus{border-color:var(--main)}
+.reply-submit{width:26px;height:26px;flex-shrink:0;background:var(--main);border:none;color:#fff;border-radius:5px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.reply-submit:hover{background:#4a1a6e}
+
+/* ── Nav bar ─────────────────────────────────────────────── */
+/* ── Bottom-right logo ───────────────────────────────────── */
+.corner-logo-fixed{
+  position:fixed;bottom:18px;right:18px;z-index:90;
+  width:36px;height:36px;object-fit:contain;
+  opacity:.55;transition:opacity .15s
+}
+.corner-logo-fixed:hover{opacity:1}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.modal-backdrop{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(26,11,36,.5);opacity:0;pointer-events:none;transition:opacity .2s
+}
+.modal-backdrop.open{opacity:1;pointer-events:auto}
+.modal{
+  width:min(480px,100%);border:1.5px solid var(--border);
+  border-radius:12px;background:var(--bg);
+  box-shadow:0 24px 80px rgba(52,17,75,.18);
+  transform:translateY(10px) scale(.98);transition:transform .2s
+}
+.modal-backdrop.open .modal{transform:none}
+.modal-header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding:16px 18px 12px;border-bottom:1.5px solid var(--border)
+}
+.modal-kicker{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.modal-kicker.content{color:var(--main)}
+.modal-kicker.ux{color:var(--accent)}
+.modal-title{font-size:1.15rem;font-weight:700;line-height:1.2;letter-spacing:-.01em}
+.modal-close{
+  width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;
+  background:var(--surface);color:var(--text);cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s
+}
+.modal-close:hover{border-color:var(--main);background:var(--main-soft);color:var(--main)}
+.modal-body{padding:16px 18px 18px}
+.modal-section+.modal-section{margin-top:14px}
+.modal-label{margin-bottom:4px;color:var(--muted);font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.modal-copy{color:var(--text);font-size:.88rem;line-height:1.65}
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:820px){
+  header{padding:0 14px;height:auto;padding-top:10px;padding-bottom:10px;flex-wrap:wrap;gap:8px}
+  .app{display:block;height:auto;overflow:auto}
+  .sidebar{width:100%!important;min-width:0!important;max-height:140px;border-right:none;border-bottom:1.5px solid var(--border);opacity:1!important;pointer-events:auto!important}
+  .sidebar.collapsed{max-height:0;padding:0}
+  .screen-viewer{padding:20px 16px 24px;scroll-padding-inline:16px;gap:16px}
+  .review-card{flex-basis:calc(100vw - 32px);opacity:1;transform:none}
+  .phone-wrapper{width:min(340px,calc(100vw - 48px));max-height:none}
+  .phone-img{max-height:none}
+  .inline-comment{width:min(360px,100%)}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Password gate overlay ─────────────────────────────── -->
+<div id="gate" role="dialog" aria-modal="true" aria-label="Enter password">
+  <div class="gate-card">
+    <div class="gate-brand"><img src="Logo.jpeg" alt="PSYFI"/></div>
+    <p class="gate-hint">Enter password to continue</p>
+    <div class="gate-input-wrap">
+      <input id="pwInput" type="password" placeholder="Password"
+        autocomplete="off" spellcheck="false"/>
+      <button class="eye-btn" type="button" onclick="toggleEye()" tabindex="-1" aria-label="Show password">
+        <!-- eye open -->
+        <svg id="eyeShow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <!-- eye off/hidden -->
+        <svg id="eyeHide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      </button>
+    </div>
+    <button id="gateBtn" type="button" onclick="unlock()">Continue</button>
+    <div id="gateErr" style="opacity:0">Incorrect password. Try again.</div>
+  </div>
+</div>
+<!-- ── End gate ───────────────────────────────────────────── -->
+
+<header>
+  <div class="header-left">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" title="Toggle sidebar">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <rect x="1" y="3" width="13" height="1.5" rx=".75" fill="currentColor"/>
+        <rect x="1" y="6.75" width="13" height="1.5" rx=".75" fill="currentColor"/>
+        <rect x="1" y="10.5" width="13" height="1.5" rx=".75" fill="currentColor"/>
+      </svg>
+    </button>
+    <span class="site-title">Kurate Recommendations: UX Research Feedback</span>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="dot content"></div>Feature / Content</div>
+    <div class="legend-item"><div class="dot ux"></div>UI / UX</div>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main">
+    <div class="screen-viewer" id="screenViewer"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="feedbackModal" onclick="closeModal(event)">
+  <section class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div><div class="modal-kicker" id="modalType"></div><h2 class="modal-title" id="modalTitle"></h2></div>
+      <button class="modal-close" type="button" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section"><div class="modal-label">What</div><div class="modal-copy" id="modalWhat"></div></div>
+      <div class="modal-section"><div class="modal-label">Why</div><div class="modal-copy" id="modalWhy"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const screens = [
+{id:"onboarding_1",page:2,title:"Onboarding 1",section:"Onboarding",img_src:"assets/screens/01-onboarding-1.png",annotations:[]},
+{id:"onboarding_2",page:3,title:"Onboarding 2",section:"Onboarding",img_src:"assets/screens/02-onboarding-2.png",annotations:[]},
+{id:"onboarding_3",page:4,title:"Onboarding 3",section:"Onboarding",img_src:"assets/screens/03-onboarding-3.png",annotations:[]},
+{id:"onboarding_4",page:5,title:"Onboarding 4",section:"Onboarding",img_src:"assets/screens/04-onboarding-4.png",annotations:[]},
+{id:"onboarding_5",page:6,title:"Onboarding 5",section:"Onboarding",img_src:"assets/screens/05-onboarding-5.png",annotations:[]},
+{id:"onboarding_6",page:7,title:"Onboarding 6",section:"Onboarding",img_src:"assets/screens/06-onboarding-6.png",annotations:[]},
+{id:"onboarding_7",page:8,title:"Onboarding 7",section:"Onboarding",img_src:"assets/screens/07-onboarding-7.png",annotations:[]},
+{id:"onboarding_8",page:9,title:"Onboarding 8",section:"Onboarding",img_src:"assets/screens/08-onboarding-8.png",annotations:[]},
+{id:"onboarding_9",page:10,title:"Onboarding 9",section:"Onboarding",img_src:"assets/screens/09-onboarding-9.png",annotations:[]},
+{id:"onboarding_10",page:11,title:"Onboarding 10",section:"Onboarding",img_src:"assets/screens/10-onboarding-10.png",annotations:[]},
+{id:"onboarding_10_1",page:12,title:"Onboarding 10.1",section:"Onboarding",img_src:"assets/screens/11-onboarding-10-1.png",annotations:[]},
+{id:"onboarding_11",page:13,title:"Onboarding 11",section:"Onboarding",img_src:"assets/screens/12-onboarding-11.png",annotations:[]},
+{id:"onboarding_12",page:14,title:"Onboarding 12",section:"Onboarding",img_src:"assets/screens/13-onboarding-12.png",annotations:[]},
+{id:"onboarding_13",page:15,title:"Onboarding 13",section:"Onboarding",img_src:"assets/screens/14-onboarding-13.png",annotations:[]},
+{id:"onboarding_14",page:16,title:"Onboarding 14",section:"Onboarding",img_src:"assets/screens/15-onboarding-14.png",annotations:[]},
+{id:"onboarding_14_1",page:17,title:"Onboarding 14.1",section:"Onboarding",img_src:"assets/screens/16-onboarding-14-1.png",annotations:[]},
+{id:"onboarding_15",page:18,title:"Onboarding 15",section:"Onboarding",img_src:"assets/screens/17-onboarding-15.png",annotations:[]},
+{id:"onboarding_16",page:19,title:"Onboarding 16",section:"Onboarding",img_src:"assets/screens/18-onboarding-16.png",annotations:[]},
+{id:"home_1",page:20,title:"Home Page 1",section:"Home",img_src:"assets/screens/19-home-1.png",annotations:[]},
+{id:"home_2",page:21,title:"Home Page 2",section:"Home",img_src:"assets/screens/20-home-2.png",annotations:[]},
+{id:"home_3",page:22,title:"Home Page 3",section:"Home",img_src:"assets/screens/21-home-3.png",annotations:[]},
+{id:"home_4",page:23,title:"Home Page 4",section:"Home",img_src:"assets/screens/22-home-4.png",annotations:[]},
+{id:"home_5",page:24,title:"Home Page 5",section:"Home",img_src:"assets/screens/23-home-5.png",annotations:[]},
+{id:"discover_1",page:25,title:"Discover 1",section:"Discover",img_src:"assets/screens/24-discover-1.png",annotations:[]},
+{id:"discover_2_end_of_feed",page:26,title:"Discover 2 (End of Feed)",section:"Discover",img_src:"assets/screens/25-discover-2-end-of-feed.png",annotations:[]},
+{id:"discover_3_collections",page:27,title:"Discover 3 (Collections)",section:"Discover",img_src:"assets/screens/26-discover-3-collections.png",annotations:[]},
+{id:"discover_4_search_bar",page:28,title:"Discover 4 (Search Bar)",section:"Discover",img_src:"assets/screens/27-discover-4-search-bar.png",annotations:[]},
+{id:"focus_mode_1",page:29,title:"Focus Mode 1",section:"Focus Mode",img_src:"assets/screens/28-focus-mode-1.png",annotations:[]},
+{id:"focus_mode_2",page:30,title:"Focus Mode 2",section:"Focus Mode",img_src:"assets/screens/29-focus-mode-2.png",annotations:[]},
+{id:"post_like",page:31,title:"Post Interaction — Like",section:"Post Interaction",img_src:"assets/screens/30-post-like.png",annotations:[]},
+{id:"post_comment_1",page:32,title:"Post Interaction — Comment 1",section:"Post Interaction",img_src:"assets/screens/31-post-comment-1.png",annotations:[]},
+{id:"post_comment_2",page:33,title:"Post Interaction — Comment 2",section:"Post Interaction",img_src:"assets/screens/32-post-comment-2.png",annotations:[]},
+{id:"post_bookmark",page:34,title:"Post Interaction — Bookmark",section:"Post Interaction",img_src:"assets/screens/33-post-bookmark.png",annotations:[]},
+{id:"post_share",page:35,title:"Post Interaction — Share",section:"Post Interaction",img_src:"assets/screens/34-post-share.png",annotations:[]},
+{id:"post_repost",page:36,title:"Post Interaction — Repost",section:"Post Interaction",img_src:"assets/screens/35-post-repost.png",annotations:[]},
+{id:"post_repost_1",page:37,title:"Post Interaction — Repost 1",section:"Post Interaction",img_src:"assets/screens/36-post-repost-1.png",annotations:[]},
+{id:"post_repost_2",page:38,title:"Post Interaction — Repost 2",section:"Post Interaction",img_src:"assets/screens/37-post-repost-2.png",annotations:[]},
+{id:"post_repost_3",page:39,title:"Post Interaction — Repost 3",section:"Post Interaction",img_src:"assets/screens/38-post-repost-3.png",annotations:[]},
+{id:"post_dropdown_list",page:40,title:"Post Interaction — Dropdown List",section:"Post Interaction",img_src:"assets/screens/39-post-dropdown-list.png",annotations:[]},
+{id:"view_post_1",page:41,title:"View Post 1",section:"View Post",img_src:"assets/screens/40-view-post-1.png",annotations:[]},
+{id:"view_post_2",page:42,title:"View Post 2",section:"View Post",img_src:"assets/screens/41-view-post-2.png",annotations:[]},
+{id:"view_post_3",page:43,title:"View Post 3",section:"View Post",img_src:"assets/screens/42-view-post-3.png",annotations:[]},
+{id:"view_post_4",page:44,title:"View Post 4",section:"View Post",img_src:"assets/screens/43-view-post-4.png",annotations:[]},
+{id:"view_post_5",page:45,title:"View Post 5",section:"View Post",img_src:"assets/screens/44-view-post-5.png",annotations:[]},
+{id:"profile_1",page:46,title:"Profile 1",section:"Profile",img_src:"assets/screens/45-profile-1.png",annotations:[]},
+{id:"profile_2_bookmarks",page:47,title:"Profile 2 (Bookmarks)",section:"Profile",img_src:"assets/screens/46-profile-2-bookmarks.png",annotations:[]},
+{id:"profile_2_1_bookmarks_collection",page:48,title:"Profile 2.1 (Bookmarks — Collection)",section:"Profile",img_src:"assets/screens/47-profile-2-1-bookmarks-collection.png",annotations:[]},
+{id:"profile_3_reposts",page:49,title:"Profile 3 (Reposts)",section:"Profile",img_src:"assets/screens/48-profile-3-reposts.png",annotations:[]},
+{id:"profile_4_following",page:50,title:"Profile 4 (Following)",section:"Profile",img_src:"assets/screens/49-profile-4-following.png",annotations:[]},
+{id:"profile_5_settings_list",page:51,title:"Profile 5 (Settings List)",section:"Profile",img_src:"assets/screens/50-profile-5-settings-list.png",annotations:[]},
+{id:"profile_5_1_settings_your_interests",page:52,title:"Profile 5.1 (Settings — Your Interests)",section:"Profile",img_src:"assets/screens/51-profile-5-1-settings-your-interests.png",annotations:[]},
+{id:"profile_5_2_settings_invite_a_friend",page:53,title:"Profile 5.2 (Settings — Invite a Friend)",section:"Profile",img_src:"assets/screens/52-profile-5-2-settings-invite-a-friend.png",annotations:[]},
+{id:"profile_5_3_settings_edit_profile",page:54,title:"Profile 5.3 (Settings — Edit Profile)",section:"Profile",img_src:"assets/screens/53-profile-5-3-settings-edit-profile.png",annotations:[]},
+{id:"profile_6_notes",page:55,title:"Profile 6 (Notes)",section:"Profile",img_src:"assets/screens/54-profile-6-notes.png",annotations:[]},
+{id:"notifications_1",page:56,title:"Notifications 1",section:"Notifications",img_src:"assets/screens/55-notifications-1.png",annotations:[]}
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+let currentIdx = 0, activePin = null, sidebarOpen = true;
+
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// ── Sidebar toggle ─────────────────────────────────────────────────────────
+document.getElementById('sidebarToggle').addEventListener('click',()=>{
+  sidebarOpen=!sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('collapsed',!sidebarOpen);
+});
+
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');
+  let last='',html='';
+  screens.forEach((s,i)=>{
+    if(s.section!==last){html+=`<div class="section-label">${esc(s.section)}</div>`;last=s.section;}
+    const has=s.annotations.length>0;
+    html+=`<button class="nav-item${has?' has-notes':''}${i===currentIdx?' active':''}" type="button" onclick="goTo(${i})">
+      <div class="nav-dot"></div><span>${esc(s.title)}</span>
+      ${has?`<span class="badge">${s.annotations.length}</span>`:''}
+    </button>`;
+  });
+  sb.innerHTML=html;
+}
+
+function renderScreen(){
+  const viewer=document.getElementById('screenViewer');
+  viewer.innerHTML=screens.map((s,si)=>{
+    const eager=Math.abs(si-currentIdx)<=1;
+    const src=s.img_src||'';
+    const pins=s.annotations.map((a,ni)=>
+      `<button class="pin ${a.type}" type="button" style="left:${a.x}%;top:${a.y}%"
+        onclick="openFeedback(${si},${ni})" id="pin-${si}-${ni}" title="${esc(a.label)}">${ni+1}</button>`
+    ).join('');
+    const note=s.annotations.length
+      ?`${s.annotations.length} feedback point${s.annotations.length>1?'s':''} — click a pin to view.`
+      :'No feedback notes on this screen.';
+    return `<section class="review-card${si===currentIdx?' active-screen':''}" id="screen-${si}" data-screen-index="${si}">
+      <div class="phone-wrapper">
+        <div class="phone-frame">
+          ${src?`<img src="${src}" class="phone-img" alt="${esc(s.title)}" loading="${eager?'eager':'lazy'}" decoding="async"/>`:'<div style="width:280px;height:560px;background:#f0ecf5;display:flex;align-items:center;justify-content:center;color:#7c6a8a;font-size:.8rem">No image</div>'}
+          ${pins}
+        </div>
+        <div class="card-popup" id="cpopup-${si}"></div>
+        </div>
+      <div class="feedback-panel">
+        <div class="screen-meta">${esc(s.section)} · Screen ${si+1} of ${screens.length}</div>
+        <div class="screen-title-area"><h2>${esc(s.title)}</h2></div>
+        <div class="empty-state"><p>${esc(note)}</p></div>
+      </div>
+    </section>`;
+  }).join('');
+  requestAnimationFrame(()=>document.querySelectorAll('.pin').forEach(p=>p.classList.add('ready')));
+}
+
+function setCurrent(idx,scroll=false){
+  currentIdx=Math.max(0,Math.min(idx,screens.length-1));
+  renderSidebar();updateNav();
+  document.querySelectorAll('.review-card').forEach((c,i)=>c.classList.toggle('active-screen',i===currentIdx));
+  if(scroll){const c=document.getElementById(`screen-${currentIdx}`);if(c)c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});}
+}
+
+function openFeedback(si,ni){
+  var note=screens[si].annotations[ni];if(!note)return;
+  setCurrent(si,false);
+
+  // Close any already-open popups
+  closeInline();
+
+  // Highlight pin
+  document.querySelectorAll('.pin').forEach(function(p){p.classList.remove('active');});
+  activePin=ni;
+  var pinEl=document.getElementById('pin-'+si+'-'+ni);
+  if(pinEl)pinEl.classList.add('active');
+
+  var cpopup=document.getElementById('cpopup-'+si);
+  if(!cpopup)return;
+
+  // Build content
+  cpopup.innerHTML='<article class="comment-card">'
+    +'<div class="comment-top"><div>'
+    +'<div class="comment-type '+note.type+'">'+(note.type==='content'?'Feature / Content':'UI / UX')+'</div>'
+    +'<div class="comment-title">'+esc(note.label)+'</div>'
+    +'</div><button class="comment-close" type="button" onclick="closeInline()">&#x2715;</button></div>'
+    +'<div class="comment-label">What</div><div class="comment-copy">'+esc(note.what)+'</div>'
+    +'<div class="comment-label">Why</div><div class="comment-copy">'+esc(note.why)+'</div>'
+    +'<div class="reply-section">'+repliesHtml(si,ni)+'</div>'
+    +'</article>';
+
+  // Measure phone-wrapper size to convert % coords to px
+  var wrapper=document.querySelector('#screen-'+si+' .phone-wrapper');
+  var wW=wrapper?wrapper.offsetWidth:270;
+  var wH=wrapper?wrapper.offsetHeight:500;
+
+  var pinX=(note.x/100)*wW;
+  var pinY=(note.y/100)*wH;
+
+  // Show hidden to measure height
+  cpopup.style.display='block';
+  cpopup.style.visibility='hidden';
+  cpopup.style.left='-9999px';
+  var popH=cpopup.offsetHeight;
+
+  // Position right of pin, vertically centred, clamped within wrapper
+  var left=pinX+18;
+  var top=pinY-popH/2;
+  if(top<0)top=4;
+  if(top+popH>wH)top=wH-popH-4;
+
+  cpopup.style.left=left+'px';
+  cpopup.style.top=top+'px';
+  cpopup.style.visibility='visible';
+
+}
+
+function closeInline(){
+  activePin=null;
+  document.querySelectorAll('.pin').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.card-popup').forEach(function(p){
+    p.style.display='none';p.innerHTML='';
+  });
+}
+
+function closeModal(e){
+  if(e&&e.target!==e.currentTarget)return;
+  const m=document.getElementById('feedbackModal');
+  m.classList.remove('open');m.setAttribute('aria-hidden','true');
+}
+
+function goTo(idx){
+  activePin=null;closeModal();closeInline();
+  setCurrent(idx,true);
+  const items=document.querySelectorAll('.nav-item');
+  if(items[idx])items[idx].scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function navigate(dir){const n=currentIdx+dir;if(n>=0&&n<screens.length)goTo(n);}
+
+function updateNav(){}
+
+function setupScroll(){
+  const viewer=document.getElementById('screenViewer');
+  let tick=false;
+  viewer.addEventListener('scroll',()=>{
+    if(tick)return;tick=true;
+    requestAnimationFrame(()=>{
+      const cx=viewer.getBoundingClientRect().left+viewer.clientWidth/2;
+      let best=currentIdx,bestD=Infinity;
+      document.querySelectorAll('.review-card').forEach(card=>{
+        const r=card.getBoundingClientRect();
+        const d=Math.abs((r.left+r.width/2)-cx);
+        if(d<bestD){bestD=d;best=Number(card.dataset.screenIndex);}
+      });
+      if(best!==currentIdx){closeInline();setCurrent(best,false);}
+      tick=false;
+    });
+  },{passive:true});
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderScreen();setCurrent(0,false);setupScroll();
+
+// ── Password gate ────────────────────────────────────────────
+// Focus on load + Enter key
+document.addEventListener('DOMContentLoaded',function(){
+  var el=document.getElementById('pwInput');
+  if(el){
+    setTimeout(function(){el.focus();},100);
+    el.addEventListener('keydown',function(e){
+      if(e.key==='Enter') unlock();
+    });
+  }
+});
+
+function unlock(){
+  var input=document.getElementById('pwInput');
+  var err=document.getElementById('gateErr');
+  var gate=document.getElementById('gate');
+  if(!input||!gate)return;
+
+  var val=input.value;
+  if(val==='Kurate2026'){
+    // Hide error, start fade
+    err.style.opacity='0';
+    gate.style.transition='opacity 0.65s cubic-bezier(.4,0,.2,1)';
+    gate.style.opacity='0';
+    gate.style.pointerEvents='none';
+    // Remove gate, fetch immediately, then poll every 4s
+    setTimeout(function(){
+      gate.style.display='none';
+      loadAllReplies();
+      setInterval(loadAllReplies,4000);
+    },700);
+  } else {
+    // Wrong password — shake + red border
+    input.classList.remove('shake','error');
+    void input.offsetWidth; // force reflow to restart animation
+    input.classList.add('shake','error');
+    err.style.opacity='1';
+    input.value='';
+    input.focus();
+    setTimeout(function(){
+      input.classList.remove('error');
+    },1400);
+  }
+}
+
+var eyeVisible=false;
+function toggleEye(){
+  eyeVisible=!eyeVisible;
+  document.getElementById('pwInput').type=eyeVisible?'text':'password';
+  document.getElementById('eyeShow').style.display=eyeVisible?'none':'block';
+  document.getElementById('eyeHide').style.display=eyeVisible?'block':'none';
+}
+// ── End gate ─────────────────────────────────────────────────
+
+// ── Live reply sync (polls every 4s after unlock) ──────────────
+var _repliesLoading=false;
+
+function loadAllReplies(){
+  if(!REPLIES_URL||_repliesLoading)return;
+  _repliesLoading=true;
+  var cb='_allRb'+Date.now();
+  var s=document.createElement('script');
+  var done=false;
+
+  function finish(){
+    if(done)return;
+    done=true;_repliesLoading=false;
+    delete window[cb];
+    if(s.parentNode)s.parentNode.removeChild(s);
+  }
+
+  window[cb]=function(d){
+    if(d&&typeof d==='object'&&!Array.isArray(d)){
+      var all=lsAll();
+      Object.keys(d).forEach(function(k){all[k]=d[k];});
+      lsSave(all);
+      // Refresh any open popup with fresh data
+      var open=document.querySelector('.card-popup[style*="block"]');
+      if(open){
+        var m=open.id.match(/cpopup-(\d+)/);
+        if(m&&activePin!==null)redrawReplies(parseInt(m[1]),activePin);
+      }
+    }
+    finish();
+  };
+
+  s.onerror=finish;
+  setTimeout(finish,6000);
+  s.src=REPLIES_URL+'?action=getall&callback='+cb;
+  document.head.appendChild(s);
+}
+
+// ── Replies ────────────────────────────────────────────────────
+// Set this to your own Apps Script Web App URL (see APPSCRIPT.md) for shared,
+// cross-browser replies. Left empty for now — replies fall back to
+// localStorage (per-browser only) until you deploy your own sheet.
+var REPLIES_URL = '';
+
+var LS_KEY = 'kurate_recommendations_replies_v1';
+
+// ── Storage helpers ────────────────────────────────────────────
+function lsAll(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}');}catch(e){return {};}}
+function lsSave(d){try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){}}
+function lsGet(k){return(lsAll()[k]||[]);}
+function lsSet(k,arr){var d=lsAll();d[k]=arr;lsSave(d);}
+function rKey(si,ni){return screens[si].id+'-'+ni;}
+
+// ── Apps Script call (form-encoded POST to avoid CORS preflight) ─
+function scriptCall(params, onDone){
+  if(!REPLIES_URL){onDone&&onDone(null);return;}
+  var body=Object.keys(params).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
+  }).join('&');
+  fetch(REPLIES_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:body
+  }).then(function(r){return r.json();})
+    .then(function(d){onDone&&onDone(d);})
+    .catch(function(e){console.warn('Script error:',e);onDone&&onDone(null);});
+}
+
+function scriptLoad(key, onDone){
+  if(!REPLIES_URL){onDone(lsGet(key));return;}
+
+  // Use JSONP-style script tag — bypasses CORS entirely, works in any iframe
+  var cbName='_rCb'+Date.now();
+  var script=document.createElement('script');
+  var done=false;
+
+  window[cbName]=function(d){
+    done=true;
+    delete window[cbName];
+    if(script.parentNode)script.parentNode.removeChild(script);
+    if(Array.isArray(d)){lsSet(key,d);onDone(d);}
+    else onDone(lsGet(key));
+  };
+
+  script.src=REPLIES_URL
+    +'?action=get'
+    +'&key='+encodeURIComponent(key)
+    +'&callback='+cbName;
+
+  script.onerror=function(){
+    done=true;delete window[cbName];
+    if(script.parentNode)script.parentNode.removeChild(script);
+    onDone(lsGet(key));
+  };
+
+  // Fallback if script doesn't fire within 5s
+  setTimeout(function(){
+    if(!done){done=true;delete window[cbName];onDone(lsGet(key));}
+  },5000);
+
+  document.head.appendChild(script);
+}
+
+// ── CRUD ───────────────────────────────────────────────────────
+function addReply(si,ni){
+  var nameEl=document.getElementById('rname-'+si+'-'+ni);
+  var msgEl=document.getElementById('rmsg-'+si+'-'+ni);
+  if(!nameEl||!msgEl)return;
+  var name=(nameEl.value||'').trim()||'Anonymous';
+  var text=(msgEl.value||'').trim();
+  if(!text)return;
+
+  msgEl.disabled=true;
+  var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  var reply={id:id,name:name,text:text,ts:Date.now()};
+
+  // Optimistic local update
+  var key=rKey(si,ni);
+  var replies=lsGet(key);
+  replies.push(reply);
+  lsSet(key,replies);
+  msgEl.value='';
+  msgEl.disabled=false;
+  try{localStorage.setItem('kurate_last_name',name);}catch(e){}
+  redrawReplies(si,ni);
+
+  // Sync to Apps Script
+  scriptCall({action:'add',key:key,id:id,name:name,text:text,ts:reply.ts},null);
+}
+
+function deleteReply(si,ni,id){
+  if(!confirm('Delete this reply?'))return;
+  var key=rKey(si,ni);
+  lsSet(key,lsGet(key).filter(function(r){return r.id!==id;}));
+  redrawReplies(si,ni);
+  scriptCall({action:'delete',key:key,id:id},null);
+}
+
+function startEdit(si,ni,id){
+  var textEl=document.getElementById('rt-'+id);
+  if(!textEl)return;
+  var cur=textEl.textContent||'';
+  textEl.innerHTML='<textarea class="reply-text-edit" id="re-'+id+'" rows="2">'+esc(cur)+'</textarea>'
+    +'<button class="reply-save-btn" onclick="saveEdit('+si+','+ni+',\''+id+'\')">Save</button>'
+    +' <button class="reply-act" onclick="cancelEdit(\''+id+'\',\''+esc(cur)+'\')">Cancel</button>';
+  var ta=document.getElementById('re-'+id);
+  if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+}
+
+function cancelEdit(id,orig){
+  var textEl=document.getElementById('rt-'+id);
+  if(textEl)textEl.innerHTML=esc(orig);
+}
+
+function saveEdit(si,ni,id){
+  var ta=document.getElementById('re-'+id);
+  if(!ta)return;
+  var text=ta.value.trim();
+  if(!text)return;
+  var key=rKey(si,ni);
+  var replies=lsGet(key).map(function(r){
+    return r.id===id?Object.assign({},r,{text:text,edited:true}):r;
+  });
+  lsSet(key,replies);
+  redrawReplies(si,ni);
+  scriptCall({action:'edit',key:key,id:id,text:text},null);
+}
+
+// ── Render ──────────────────────────────────────────────────────
+function timeAgo(ts){
+  var s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return 'just now';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+function repliesHtml(si,ni){
+  var key=rKey(si,ni);
+  var replies=lsGet(key);
+  var savedName='';
+  try{savedName=localStorage.getItem('kurate_last_name')||'';}catch(e){}
+
+  var pencil='<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 1.5l2 2L4 10H2v-2z"/><line x1="6.5" y1="3.5" x2="8.5" y2="5.5"/></svg>';
+  var trash='<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="3" x2="10" y2="3"/><path d="M4 3V2h4v1"/><path d="M3 3l.7 7h4.6l.7-7"/></svg>';
+
+  var listHtml=replies.length
+    ? replies.map(function(r){
+        return '<div class="reply-item">'
+          +'<div class="reply-row">'
+          +'<div class="reply-meta"><strong>'+esc(r.name)+'</strong> &middot; '+timeAgo(r.ts)+(r.edited?' &middot; edited':'')+'</div>'
+          +'<div class="reply-icon-btns">'
+          +'<button class="reply-icon-btn" onclick="startEdit('+si+','+ni+',\''+r.id+'\')" title="Edit">'+pencil+'</button>'
+          +'<button class="reply-icon-btn del" onclick="deleteReply('+si+','+ni+',\''+r.id+'\')" title="Delete">'+trash+'</button>'
+          +'</div></div>'
+          +'<div id="rt-'+r.id+'" class="reply-text">'+esc(r.text)+'</div>'
+          +'</div>';
+      }).join('')
+    : '';
+
+  return '<hr class="reply-divider"/>'
+    +(listHtml?'<div class="reply-list" id="rlist-'+si+'-'+ni+'">'+listHtml+'</div>':'')
+    +'<div class="reply-add">'
+    +'<input class="reply-name-input" id="rname-'+si+'-'+ni+'" placeholder="Name" value="'+esc(savedName)+'" maxlength="32"/>'
+    +'<textarea class="reply-msg-input" id="rmsg-'+si+'-'+ni+'" placeholder="Reply…" rows="1" maxlength="400" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();addReply('+si+','+ni+')}"></textarea>'
+    +'<button class="reply-submit" onclick="addReply('+si+','+ni+')" title="Send">&#x2192;</button>'
+    +'</div>';
+}
+
+function redrawReplies(si,ni){
+  var card=document.getElementById('cpopup-'+si);
+  if(!card)return;
+  var sec=card.querySelector('.reply-section');
+  if(sec)sec.innerHTML=repliesHtml(si,ni);
+}
+// ── End replies ─────────────────────────────────────────────────
+
+document.addEventListener('keydown',e=>{
+  const open=document.getElementById('feedbackModal').classList.contains('open');
+  if(e.key==='Escape'&&open){closeModal();return;}
+  if(e.key==='Escape'&&activePin!==null){closeInline();return;}
+  if(open)return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')navigate(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')navigate(-1);
+});
+</script>
+
+
+<img src="Logo.jpeg" alt="" class="corner-logo-fixed"/>
+</body>
+</html>
