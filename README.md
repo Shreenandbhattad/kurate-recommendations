@@ -13,8 +13,9 @@ Recommendations flow screen-by-screen. Cloned from the structure of
 - `assets/screens/` — the 55 screenshots, numbered and grouped by section.
 - `Logo.jpeg` — corner/gate branding (reused from the source repo — swap it
   out if you want different branding).
-- `APPSCRIPT.md` — instructions for wiring up a Google Sheet so replies sync
-  across browsers instead of staying in localStorage.
+- `FIREBASE.md` — one-time setup for a shared Firestore project so replies
+  sync live across everyone viewing the page, instead of staying in
+  localStorage. Reusable across every future clone of this template.
 
 ## Status
 
@@ -24,9 +25,13 @@ Recommendations flow screen-by-screen. Cloned from the structure of
   `index.html`.
 - The gate password is set — change it by editing the `val===` check in the
   `unlock()` function.
-- `REPLIES_URL` is left blank, so comments only persist in your own browser's
-  localStorage until you deploy your own Apps Script (see `APPSCRIPT.md`) and
-  paste the URL in.
+- `FIREBASE_CONFIG` is left blank, so comments only persist in your own
+  browser's localStorage until you set up Firestore (see `FIREBASE.md`,
+  ~5 min, free, one-time) and paste your config in.
+- Design pass: ambient aurora backdrop, sliding sidebar highlight, phone
+  tilt-on-hover, pulsing pins, animated popups/modal, and a top progress bar
+  — all using a shared `--ease` cubic-bezier for consistent motion, and all
+  respecting `prefers-reduced-motion`.
 
 ## Adding a feedback pin
 

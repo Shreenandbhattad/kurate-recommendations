@@ -25,17 +25,29 @@
   -webkit-backdrop-filter:blur(24px);
   box-shadow:0 8px 48px rgba(52,17,75,0.08),0 2px 12px rgba(52,17,75,0.05);
   width:min(360px,90vw);
-  animation:gate-in .55s cubic-bezier(.2,.8,.2,1) both;
+  animation:gate-in .7s var(--ease) both;
 }
 @keyframes gate-in{
-  from{opacity:0;transform:translateY(14px) scale(.97)}
+  from{opacity:0;transform:translateY(22px) scale(.94)}
   to{opacity:1;transform:none}
 }
 
 .gate-brand img{
   width:64px;height:64px;
   object-fit:contain;display:block;
-  margin:0 auto
+  margin:0 auto;
+  animation:gate-brand-in .8s .1s var(--ease) both, gate-brand-breathe 4s 1s ease-in-out infinite;
+}
+@keyframes gate-brand-in{
+  from{opacity:0;transform:scale(.7) rotate(-8deg)}
+  to{opacity:1;transform:none}
+}
+@keyframes gate-brand-breathe{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.05)}
+}
+@media(prefers-reduced-motion:reduce){
+  .gate-brand img{animation:none}
 }
 
 .gate-hint{
@@ -54,7 +66,7 @@
   font-size:.9rem;font-family:inherit;
   color:#1a0b24;background:rgba(255,255,255,0.9);
   outline:none;
-  transition:border-color .18s,box-shadow .18s;
+  transition:border-color .25s var(--ease),box-shadow .25s var(--ease);
   letter-spacing:.02em;
 }
 #pwInput::placeholder{letter-spacing:.01em;color:#b8a8c8}
@@ -84,10 +96,10 @@
   border:none;border-radius:10px;
   font-size:.88rem;font-family:inherit;font-weight:600;
   cursor:pointer;letter-spacing:.02em;
-  transition:background .15s,transform .12s,box-shadow .15s;
+  transition:background .25s var(--ease),transform .18s var(--ease),box-shadow .25s var(--ease);
   box-shadow:0 2px 12px rgba(52,17,75,0.22)
 }
-#gateBtn:hover{background:#4a1a6e;box-shadow:0 4px 18px rgba(52,17,75,0.28)}
+#gateBtn:hover{background:#4a1a6e;box-shadow:0 6px 22px rgba(52,17,75,0.32);transform:translateY(-1px)}
 #gateBtn:active{transform:scale(.98)}
 
 #gateErr{
@@ -109,6 +121,8 @@
   --main-soft: rgba(52,17,75,0.07);
   --accent-soft: rgba(255,110,96,0.1);
   --sidebar-w: 260px;
+  --ease: cubic-bezier(.16,1,.3,1);
+  --ease-soft: cubic-bezier(.25,.46,.45,.94);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{
@@ -122,6 +136,39 @@ body{
   font-family:'DM Sans',system-ui,sans-serif;
   line-height:1.5;
   overflow:hidden;
+  position:relative;
+}
+
+/* ── Ambient aurora backdrop ─────────────────────────────── */
+.aurora{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  overflow:hidden;
+}
+.aurora::before,.aurora::after{
+  content:'';position:absolute;border-radius:50%;
+  filter:blur(80px);opacity:.35;
+  will-change:transform;
+}
+.aurora::before{
+  width:520px;height:520px;top:-180px;left:-120px;
+  background:radial-gradient(circle,rgba(52,17,75,.35),transparent 70%);
+  animation:aurora-drift-a 26s ease-in-out infinite;
+}
+.aurora::after{
+  width:460px;height:460px;bottom:-160px;right:-100px;
+  background:radial-gradient(circle,rgba(255,110,96,.3),transparent 70%);
+  animation:aurora-drift-b 22s ease-in-out infinite;
+}
+@keyframes aurora-drift-a{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(60px,40px) scale(1.12)}
+}
+@keyframes aurora-drift-b{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-50px,-30px) scale(1.08)}
+}
+@media(prefers-reduced-motion:reduce){
+  .aurora::before,.aurora::after{animation:none}
 }
 
 /* ── Header ─────────────────────────────────────────────── */
@@ -139,9 +186,10 @@ header{
   width:32px;height:32px;border:1.5px solid var(--border);border-radius:6px;
   background:transparent;color:var(--muted);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .15s;flex-shrink:0
+  transition:all .2s var(--ease);flex-shrink:0
 }
-.sidebar-toggle:hover{color:var(--main);border-color:var(--main);background:var(--main-soft)}
+.sidebar-toggle:hover{color:var(--main);border-color:var(--main);background:var(--main-soft);transform:scale(1.06)}
+.sidebar-toggle:active{transform:scale(.94)}
 .site-title{
   font-size:.82rem;font-weight:600;letter-spacing:.01em;
   color:var(--main);white-space:nowrap
@@ -162,8 +210,8 @@ header{
   border-right:1px solid var(--border);
   overflow-y:auto;overflow-x:hidden;
   padding:10px 0;background:var(--surface);
-  transition:width .2s ease,min-width .2s ease,opacity .2s ease,padding .2s ease;
-  flex-shrink:0
+  transition:width .3s var(--ease),min-width .3s var(--ease),opacity .25s var(--ease),padding .3s var(--ease);
+  flex-shrink:0;position:relative
 }
 .sidebar.collapsed{width:0;min-width:0;padding:0;opacity:0;pointer-events:none;border-right:none}
 .sidebar::-webkit-scrollbar{width:3px}
@@ -173,25 +221,46 @@ header{
   font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;
   color:var(--muted);font-weight:700;white-space:nowrap
 }
+.nav-highlight{
+  position:absolute;left:0;width:100%;
+  background:var(--main-soft);border-left:2.5px solid var(--main);
+  border-radius:0 6px 6px 0;
+  opacity:0;pointer-events:none;z-index:0;
+  transition:transform .3s var(--ease),height .3s var(--ease),opacity .2s var(--ease);
+}
 .nav-item{
   width:100%;border:0;display:flex;align-items:center;gap:8px;
   padding:7px 14px;background:transparent;cursor:pointer;
   border-left:2.5px solid transparent;font-size:.78rem;font-family:inherit;
   text-align:left;color:var(--muted);white-space:nowrap;
-  transition:all .15s
+  transition:color .18s var(--ease),font-weight .18s var(--ease);
+  position:relative;z-index:1
 }
-.nav-item:hover{background:var(--main-soft);color:var(--text)}
-.nav-item.active{background:var(--main-soft);border-left-color:var(--main);color:var(--main);font-weight:600}
+.nav-item:hover:not(.active){color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--main);font-weight:600}
 .nav-item .badge{
   margin-left:auto;font-size:.58rem;background:var(--surface2);
-  border-radius:8px;padding:1px 6px;color:var(--muted);flex-shrink:0
+  border-radius:8px;padding:1px 6px;color:var(--muted);flex-shrink:0;
+  transition:background .2s var(--ease),color .2s var(--ease)
 }
 .nav-item.active .badge{background:rgba(52,17,75,.15);color:var(--main)}
-.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--border)}
+.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--border);transition:background .2s var(--ease),transform .2s var(--ease)}
 .nav-item.has-notes .nav-dot{background:var(--main)}
+.nav-item.active .nav-dot{transform:scale(1.3)}
 
 /* ── Main ────────────────────────────────────────────────── */
 .main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+
+/* ── Progress bar ────────────────────────────────────────── */
+.progress-track{
+  height:2.5px;flex-shrink:0;background:var(--surface2);
+  position:relative;overflow:hidden
+}
+.progress-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--main),var(--accent));
+  transition:width .35s var(--ease);
+}
 
 /* ── Screen viewer ───────────────────────────────────────── */
 .screen-viewer{
@@ -202,6 +271,7 @@ header{
   scroll-behavior:smooth;
   scroll-padding-inline:48px;
   scroll-snap-type:x proximity;
+  perspective:1400px;
 }
 .screen-viewer::-webkit-scrollbar{height:5px}
 .screen-viewer::-webkit-scrollbar-track{background:var(--surface)}
@@ -213,23 +283,33 @@ header{
   position:relative;
   display:flex;flex-direction:column;align-items:center;
   gap:18px;scroll-snap-align:center;
-  opacity:.45;transform:scale(.97);
-  transition:opacity .25s ease,transform .25s ease;
+  opacity:.4;transform:scale(.94) translateY(6px);
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
   /* no contain — allows comment card to overflow card boundary */
   overflow:visible
 }
-.review-card.active-screen,.review-card:hover{opacity:1;transform:scale(1);z-index:2;position:relative}
+.review-card.active-screen,.review-card:hover{opacity:1;transform:scale(1) translateY(0);z-index:2;position:relative}
+@keyframes card-enter{
+  from{opacity:0;transform:scale(.9) translateY(16px)}
+}
+.review-card{animation:card-enter .5s var(--ease) both}
+@media(prefers-reduced-motion:reduce){.review-card{animation:none}}
 
 .phone-wrapper{
   position:relative;flex-shrink:0;
   width:min(250px,calc(100vw - 380px));
   overflow:visible;
-  filter:drop-shadow(0 16px 40px rgba(52,17,75,.15))
+  filter:drop-shadow(0 16px 40px rgba(52,17,75,.15));
+  transition:filter .3s var(--ease);
+  transform-style:preserve-3d;
 }
+.review-card.active-screen .phone-wrapper:hover{filter:drop-shadow(0 22px 52px rgba(52,17,75,.22))}
 .phone-frame{
   position:relative;overflow:hidden;
   border-radius:32px;background:#f5f0f8;
-  transition:transform .25s ease
+  transition:transform .4s var(--ease);
+  transform-style:preserve-3d;
+  will-change:transform;
 }
 /* Purple corner overlay — masks screenshot white edges */
 .phone-frame::after{
@@ -239,6 +319,17 @@ header{
   box-shadow:inset 0 0 0 2px var(--main);
   pointer-events:none;z-index:10
 }
+/* Subtle glossy sheen sweeping across on hover — pure CSS, no JS cost */
+.phone-frame::before{
+  content:'';
+  position:absolute;inset:0;z-index:11;
+  border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);
+  background-size:250% 250%;
+  background-position:120% 120%;
+  transition:background-position .7s var(--ease);
+}
+.review-card.active-screen .phone-frame:hover::before{background-position:-20% -20%}
 .review-card.active-screen .phone-frame{transform:translateY(-2px)}
 .phone-img{
   width:100%;
@@ -247,25 +338,41 @@ header{
   max-height:calc(100vh - 180px);
   object-fit:contain;object-position:top
 }
+@media(prefers-reduced-motion:reduce){
+  .phone-frame,.phone-wrapper{transition:none}
+}
 
 /* ── Pins ─────────────────────────────────────────────────── */
 .pin{
-  position:absolute;transform:translate(-50%,-50%);
+  position:absolute;transform:translate(-50%,-50%) scale(.5);
   width:26px;height:26px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;font-size:.62rem;font-weight:700;z-index:10;
   border:2px solid rgba(255,255,255,.7);
   box-shadow:0 4px 14px rgba(0,0,0,.2);
-  opacity:0;transition:opacity .2s,transform .18s,box-shadow .18s;
+  opacity:0;transition:opacity .3s var(--ease),transform .35s var(--ease),box-shadow .2s var(--ease);
   font-family:inherit;user-select:none
 }
-.pin.ready{opacity:.9}
+.pin.ready{opacity:.9;transform:translate(-50%,-50%) scale(1)}
 .pin.content{background:var(--main);color:#fff}
 .pin.ux{background:var(--accent);color:#fff}
+.pin.ready:not(.active):not(:hover){animation:pin-pulse 2.6s ease-in-out infinite}
+@keyframes pin-pulse{
+  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 0 rgba(52,17,75,.35)}
+  50%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 7px rgba(52,17,75,0)}
+}
+.pin.ux.ready:not(.active):not(:hover){animation-name:pin-pulse-ux}
+@keyframes pin-pulse-ux{
+  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 0 rgba(255,110,96,.35)}
+  50%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 7px rgba(255,110,96,0)}
+}
 .pin:hover,.pin.active{
-  transform:translate(-50%,-50%) scale(1.18);
+  transform:translate(-50%,-50%) scale(1.2);
   box-shadow:0 8px 24px rgba(0,0,0,.25);
-  opacity:1
+  opacity:1;animation:none
+}
+@media(prefers-reduced-motion:reduce){
+  .pin.ready:not(.active):not(:hover){animation:none}
 }
 
 /* ── Feedback panel ──────────────────────────────────────── */
@@ -280,7 +387,11 @@ header{
   width:260px;
   display:none;
   z-index:100;
+  opacity:0;transform:scale(.92) translateY(4px);
+  transform-origin:left center;
+  transition:opacity .28s var(--ease),transform .28s var(--ease);
 }
+.card-popup.open{opacity:1;transform:scale(1) translateY(0)}
 .comment-card{
   border:1px solid rgba(52,17,75,.18);border-radius:10px;padding:10px 12px;
   background:#ffffff !important;
@@ -296,9 +407,9 @@ header{
   width:20px;height:20px;border:1px solid var(--border);border-radius:4px;
   background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  transition:all .12s
+  transition:all .18s var(--ease)
 }
-.comment-close:hover{border-color:var(--main);color:var(--main)}
+.comment-close:hover{border-color:var(--main);color:var(--main);background:var(--main-soft);transform:rotate(90deg)}
 .comment-label{margin-top:8px;margin-bottom:2px;color:var(--muted);font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 .comment-copy{color:var(--text);font-size:.76rem;line-height:1.55}
 
@@ -315,8 +426,9 @@ header{
 .reply-icon-btn{
   background:none;border:none;cursor:pointer;
   color:var(--border);padding:2px;border-radius:3px;
-  display:flex;align-items:center;transition:color .12s,background .12s
+  display:flex;align-items:center;transition:color .18s var(--ease),background .18s var(--ease),transform .18s var(--ease)
 }
+.reply-icon-btn:hover{transform:scale(1.15)}
 .reply-icon-btn:hover{color:var(--main);background:var(--main-soft)}
 .reply-icon-btn.del:hover{color:var(--accent);background:var(--accent-soft)}
 .reply-text{font-size:.75rem;color:var(--text);line-height:1.45;word-break:break-word}
@@ -327,30 +439,36 @@ header{
 .reply-name-input{width:72px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:.7rem;font-family:inherit;color:var(--text);background:#fff;outline:none}
 .reply-msg-input{flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:.7rem;font-family:inherit;color:var(--text);background:#fff;outline:none;resize:none}
 .reply-name-input:focus,.reply-msg-input:focus{border-color:var(--main)}
-.reply-submit{width:26px;height:26px;flex-shrink:0;background:var(--main);border:none;color:#fff;border-radius:5px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:background .12s}
-.reply-submit:hover{background:#4a1a6e}
+.reply-submit{width:26px;height:26px;flex-shrink:0;background:var(--main);border:none;color:#fff;border-radius:5px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:background .18s var(--ease),transform .18s var(--ease)}
+.reply-submit:hover{background:#4a1a6e;transform:scale(1.08) translateX(1px)}
+.reply-submit:active{transform:scale(.92)}
+.reply-item{animation:reply-in .35s var(--ease) both}
+@keyframes reply-in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){.reply-item{animation:none}}
 
 /* ── Nav bar ─────────────────────────────────────────────── */
 /* ── Bottom-right logo ───────────────────────────────────── */
 .corner-logo-fixed{
   position:fixed;bottom:18px;right:18px;z-index:90;
   width:36px;height:36px;object-fit:contain;
-  opacity:.55;transition:opacity .15s
+  opacity:.55;transition:opacity .25s var(--ease),transform .3s var(--ease)
 }
-.corner-logo-fixed:hover{opacity:1}
+.corner-logo-fixed:hover{opacity:1;transform:rotate(-8deg) scale(1.08)}
 
 /* ── Modal ───────────────────────────────────────────────── */
 .modal-backdrop{
   position:fixed;inset:0;z-index:200;
   display:flex;align-items:center;justify-content:center;padding:24px;
-  background:rgba(26,11,36,.5);opacity:0;pointer-events:none;transition:opacity .2s
+  background:rgba(26,11,36,.5);opacity:0;pointer-events:none;
+  backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);
+  transition:opacity .3s var(--ease),backdrop-filter .3s var(--ease);
 }
-.modal-backdrop.open{opacity:1;pointer-events:auto}
+.modal-backdrop.open{opacity:1;pointer-events:auto;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .modal{
   width:min(480px,100%);border:1.5px solid var(--border);
   border-radius:12px;background:var(--bg);
   box-shadow:0 24px 80px rgba(52,17,75,.18);
-  transform:translateY(10px) scale(.98);transition:transform .2s
+  transform:translateY(16px) scale(.95);transition:transform .35s var(--ease)
 }
 .modal-backdrop.open .modal{transform:none}
 .modal-header{
@@ -364,9 +482,9 @@ header{
 .modal-close{
   width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;
   background:var(--surface);color:var(--text);cursor:pointer;font-size:1rem;
-  display:flex;align-items:center;justify-content:center;transition:all .15s
+  display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease)
 }
-.modal-close:hover{border-color:var(--main);background:var(--main-soft);color:var(--main)}
+.modal-close:hover{border-color:var(--main);background:var(--main-soft);color:var(--main);transform:rotate(90deg)}
 .modal-body{padding:16px 18px 18px}
 .modal-section+.modal-section{margin-top:14px}
 .modal-label{margin-bottom:4px;color:var(--muted);font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
@@ -388,6 +506,8 @@ header{
 </style>
 </head>
 <body>
+
+<div class="aurora" aria-hidden="true"></div>
 
 <!-- ── Password gate overlay ─────────────────────────────── -->
 <div id="gate" role="dialog" aria-modal="true" aria-label="Enter password">
@@ -434,6 +554,7 @@ header{
 <div class="app">
   <nav class="sidebar" id="sidebar"></nav>
   <div class="main">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     <div class="screen-viewer" id="screenViewer"></div>
   </div>
 </div>
@@ -450,6 +571,10 @@ header{
     </div>
   </section>
 </div>
+
+<!-- Firebase compat SDK — powers the live reply threads. See FIREBASE.md. -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 
 <script>
 const screens = [
@@ -523,16 +648,37 @@ document.getElementById('sidebarToggle').addEventListener('click',()=>{
 
 function renderSidebar(){
   const sb=document.getElementById('sidebar');
-  let last='',html='';
+  let last='',html='<div class="nav-highlight" id="navHighlight"></div>';
   screens.forEach((s,i)=>{
     if(s.section!==last){html+=`<div class="section-label">${esc(s.section)}</div>`;last=s.section;}
     const has=s.annotations.length>0;
-    html+=`<button class="nav-item${has?' has-notes':''}${i===currentIdx?' active':''}" type="button" onclick="goTo(${i})">
+    html+=`<button class="nav-item${has?' has-notes':''}${i===currentIdx?' active':''}" type="button" onclick="goTo(${i})" data-idx="${i}">
       <div class="nav-dot"></div><span>${esc(s.title)}</span>
       ${has?`<span class="badge">${s.annotations.length}</span>`:''}
     </button>`;
   });
   sb.innerHTML=html;
+  positionNavHighlight();
+}
+
+function positionNavHighlight(){
+  const hl=document.getElementById('navHighlight');
+  const active=document.querySelector('.nav-item.active');
+  if(!hl||!active){if(hl)hl.style.opacity='0';return;}
+  hl.style.height=active.offsetHeight+'px';
+  hl.style.transform='translateY('+active.offsetTop+'px)';
+  hl.style.opacity='1';
+}
+
+// Sidebar markup (item list + badges) never changes at runtime — only which
+// item is "active" does. Rebuilding innerHTML every navigation would destroy
+// and recreate .nav-highlight each time, killing its slide transition. So we
+// build the list once, then just toggle classes + reposition on navigation.
+function updateSidebarActive(){
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active',Number(el.dataset.idx)===currentIdx);
+  });
+  positionNavHighlight();
 }
 
 function renderScreen(){
@@ -567,8 +713,10 @@ function renderScreen(){
 
 function setCurrent(idx,scroll=false){
   currentIdx=Math.max(0,Math.min(idx,screens.length-1));
-  renderSidebar();updateNav();
+  updateSidebarActive();updateNav();
   document.querySelectorAll('.review-card').forEach((c,i)=>c.classList.toggle('active-screen',i===currentIdx));
+  const fill=document.getElementById('progressFill');
+  if(fill)fill.style.width=(((currentIdx+1)/screens.length)*100)+'%';
   if(scroll){const c=document.getElementById(`screen-${currentIdx}`);if(c)c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});}
 }
 
@@ -622,14 +770,21 @@ function openFeedback(si,ni){
   cpopup.style.left=left+'px';
   cpopup.style.top=top+'px';
   cpopup.style.visibility='visible';
+  requestAnimationFrame(function(){cpopup.classList.add('open');});
 
+  // Live-sync replies for this pin (Firestore listener; no-op if unconfigured)
+  watchReplies(si,ni);
 }
 
 function closeInline(){
   activePin=null;
+  stopWatchingReplies();
   document.querySelectorAll('.pin').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.card-popup').forEach(function(p){
-    p.style.display='none';p.innerHTML='';
+  document.querySelectorAll('.card-popup.open').forEach(function(p){
+    p.classList.remove('open');
+    setTimeout(function(){
+      if(!p.classList.contains('open')){p.style.display='none';p.innerHTML='';}
+    },280);
   });
 }
 
@@ -649,6 +804,33 @@ function goTo(idx){
 function navigate(dir){const n=currentIdx+dir;if(n>=0&&n<screens.length)goTo(n);}
 
 function updateNav(){}
+
+// ── Phone-frame tilt-on-hover ──────────────────────────────────────────────
+function setupTilt(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const viewer=document.getElementById('screenViewer');
+  const MAX=7; // max tilt in degrees
+  function reset(frame){
+    frame.style.transition='';
+    frame.style.transform='';
+  }
+  viewer.addEventListener('mousemove',function(e){
+    const frame=e.target.closest('.phone-frame');
+    if(!frame)return;
+    const r=frame.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width;
+    const py=(e.clientY-r.top)/r.height;
+    const rx=((0.5-py)*MAX*2).toFixed(2);
+    const ry=((px-0.5)*MAX*2).toFixed(2);
+    frame.style.transition='none';
+    frame.style.transform='perspective(700px) rotateX('+rx+'deg) rotateY('+ry+'deg)';
+  },{passive:true});
+  viewer.addEventListener('mouseout',function(e){
+    const from=e.target.closest&&e.target.closest('.phone-frame');
+    const to=e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('.phone-frame');
+    if(from&&from!==to)reset(from);
+  });
+}
 
 function setupScroll(){
   const viewer=document.getElementById('screenViewer');
@@ -670,7 +852,8 @@ function setupScroll(){
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
-renderScreen();setCurrent(0,false);setupScroll();
+renderSidebar();renderScreen();setCurrent(0,false);setupScroll();setupTilt();
+window.addEventListener('resize',()=>positionNavHighlight());
 
 // ── Password gate ────────────────────────────────────────────
 // Focus on load + Enter key
@@ -697,11 +880,10 @@ function unlock(){
     gate.style.transition='opacity 0.65s cubic-bezier(.4,0,.2,1)';
     gate.style.opacity='0';
     gate.style.pointerEvents='none';
-    // Remove gate, fetch immediately, then poll every 4s
+    // Remove gate. Replies sync live via Firestore listeners (attached
+    // per-popup in openFeedback) — no prefetch or polling needed.
     setTimeout(function(){
       gate.style.display='none';
-      loadAllReplies();
-      setInterval(loadAllReplies,4000);
     },700);
   } else {
     // Wrong password — shake + red border
@@ -726,107 +908,62 @@ function toggleEye(){
 }
 // ── End gate ─────────────────────────────────────────────────
 
-// ── Live reply sync (polls every 4s after unlock) ──────────────
-var _repliesLoading=false;
-
-function loadAllReplies(){
-  if(!REPLIES_URL||_repliesLoading)return;
-  _repliesLoading=true;
-  var cb='_allRb'+Date.now();
-  var s=document.createElement('script');
-  var done=false;
-
-  function finish(){
-    if(done)return;
-    done=true;_repliesLoading=false;
-    delete window[cb];
-    if(s.parentNode)s.parentNode.removeChild(s);
-  }
-
-  window[cb]=function(d){
-    if(d&&typeof d==='object'&&!Array.isArray(d)){
-      var all=lsAll();
-      Object.keys(d).forEach(function(k){all[k]=d[k];});
-      lsSave(all);
-      // Refresh any open popup with fresh data
-      var open=document.querySelector('.card-popup[style*="block"]');
-      if(open){
-        var m=open.id.match(/cpopup-(\d+)/);
-        if(m&&activePin!==null)redrawReplies(parseInt(m[1]),activePin);
-      }
-    }
-    finish();
-  };
-
-  s.onerror=finish;
-  setTimeout(finish,6000);
-  s.src=REPLIES_URL+'?action=getall&callback='+cb;
-  document.head.appendChild(s);
-}
-
-// ── Replies ────────────────────────────────────────────────────
-// Set this to your own Apps Script Web App URL (see APPSCRIPT.md) for shared,
-// cross-browser replies. Left empty for now — replies fall back to
-// localStorage (per-browser only) until you deploy your own sheet.
-var REPLIES_URL = '';
+// ── Replies (Firestore — see FIREBASE.md) ───────────────────────
+// One-time setup, reusable forever: create ONE Firebase project, paste its
+// config below, and you never touch the Firebase console again. Every future
+// clone of this template just needs a different REPLIES_SITE string — same
+// config, same collection, same security rule, no new project/deployment.
+var FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+var REPLIES_SITE = 'kurate-recommendations'; // unique per clone-repo
+var REPLIES_COLLECTION = 'kurate_reviews';   // shared across all clone-repos
 
 var LS_KEY = 'kurate_recommendations_replies_v1';
+var db = null, repliesEnabled = false, _unsubReplies = null;
 
-// ── Storage helpers ────────────────────────────────────────────
+(function initFirebase(){
+  if(!FIREBASE_CONFIG.apiKey||typeof firebase==='undefined')return;
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.firestore();
+    repliesEnabled=true;
+  }catch(e){console.warn('Firebase init failed — falling back to localStorage:',e);}
+})();
+
+// ── localStorage fallback / local cache (used when Firebase isn't configured,
+// and as an instant-paint cache while the live listener catches up) ────────
 function lsAll(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}');}catch(e){return {};}}
 function lsSave(d){try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){}}
 function lsGet(k){return(lsAll()[k]||[]);}
 function lsSet(k,arr){var d=lsAll();d[k]=arr;lsSave(d);}
 function rKey(si,ni){return screens[si].id+'-'+ni;}
+function skeyOf(key){return REPLIES_SITE+'::'+key;}
 
-// ── Apps Script call (form-encoded POST to avoid CORS preflight) ─
-function scriptCall(params, onDone){
-  if(!REPLIES_URL){onDone&&onDone(null);return;}
-  var body=Object.keys(params).map(function(k){
-    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);
-  }).join('&');
-  fetch(REPLIES_URL,{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:body
-  }).then(function(r){return r.json();})
-    .then(function(d){onDone&&onDone(d);})
-    .catch(function(e){console.warn('Script error:',e);onDone&&onDone(null);});
+// ── Live listener — attached when a popup opens, detached when it closes ──
+function watchReplies(si,ni){
+  var key=rKey(si,ni);
+  if(_unsubReplies){_unsubReplies();_unsubReplies=null;}
+  if(!repliesEnabled){redrawReplies(si,ni);return;}
+  _unsubReplies=db.collection(REPLIES_COLLECTION)
+    .where('skey','==',skeyOf(key)).orderBy('ts')
+    .onSnapshot(function(snap){
+      var replies=snap.docs.map(function(d){
+        var v=d.data();
+        return {id:d.id,name:v.name,text:v.text,ts:v.ts,edited:!!v.edited};
+      });
+      lsSet(key,replies);
+      redrawReplies(si,ni);
+    },function(err){console.warn('Firestore listen error:',err);});
 }
 
-function scriptLoad(key, onDone){
-  if(!REPLIES_URL){onDone(lsGet(key));return;}
-
-  // Use JSONP-style script tag — bypasses CORS entirely, works in any iframe
-  var cbName='_rCb'+Date.now();
-  var script=document.createElement('script');
-  var done=false;
-
-  window[cbName]=function(d){
-    done=true;
-    delete window[cbName];
-    if(script.parentNode)script.parentNode.removeChild(script);
-    if(Array.isArray(d)){lsSet(key,d);onDone(d);}
-    else onDone(lsGet(key));
-  };
-
-  script.src=REPLIES_URL
-    +'?action=get'
-    +'&key='+encodeURIComponent(key)
-    +'&callback='+cbName;
-
-  script.onerror=function(){
-    done=true;delete window[cbName];
-    if(script.parentNode)script.parentNode.removeChild(script);
-    onDone(lsGet(key));
-  };
-
-  // Fallback if script doesn't fire within 5s
-  setTimeout(function(){
-    if(!done){done=true;delete window[cbName];onDone(lsGet(key));}
-  },5000);
-
-  document.head.appendChild(script);
+function stopWatchingReplies(){
+  if(_unsubReplies){_unsubReplies();_unsubReplies=null;}
 }
 
 // ── CRUD ───────────────────────────────────────────────────────
@@ -837,31 +974,35 @@ function addReply(si,ni){
   var name=(nameEl.value||'').trim()||'Anonymous';
   var text=(msgEl.value||'').trim();
   if(!text)return;
-
-  msgEl.disabled=true;
-  var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-  var reply={id:id,name:name,text:text,ts:Date.now()};
-
-  // Optimistic local update
   var key=rKey(si,ni);
-  var replies=lsGet(key);
-  replies.push(reply);
-  lsSet(key,replies);
   msgEl.value='';
-  msgEl.disabled=false;
   try{localStorage.setItem('kurate_last_name',name);}catch(e){}
-  redrawReplies(si,ni);
 
-  // Sync to Apps Script
-  scriptCall({action:'add',key:key,id:id,name:name,text:text,ts:reply.ts},null);
+  if(repliesEnabled){
+    db.collection(REPLIES_COLLECTION).add({
+      skey:skeyOf(key),site:REPLIES_SITE,key:key,
+      name:name,text:text,ts:Date.now(),edited:false
+    }).catch(function(e){console.warn('Add reply failed:',e);});
+    // The onSnapshot listener above repaints instantly (Firestore echoes
+    // local writes before the server round-trip completes) — no manual
+    // optimistic-update bookkeeping needed.
+  } else {
+    var replies=lsGet(key);
+    replies.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:name,text:text,ts:Date.now()});
+    lsSet(key,replies);
+    redrawReplies(si,ni);
+  }
 }
 
 function deleteReply(si,ni,id){
   if(!confirm('Delete this reply?'))return;
   var key=rKey(si,ni);
-  lsSet(key,lsGet(key).filter(function(r){return r.id!==id;}));
-  redrawReplies(si,ni);
-  scriptCall({action:'delete',key:key,id:id},null);
+  if(repliesEnabled){
+    db.collection(REPLIES_COLLECTION).doc(id).delete().catch(function(e){console.warn('Delete failed:',e);});
+  } else {
+    lsSet(key,lsGet(key).filter(function(r){return r.id!==id;}));
+    redrawReplies(si,ni);
+  }
 }
 
 function startEdit(si,ni,id){
@@ -886,12 +1027,12 @@ function saveEdit(si,ni,id){
   var text=ta.value.trim();
   if(!text)return;
   var key=rKey(si,ni);
-  var replies=lsGet(key).map(function(r){
-    return r.id===id?Object.assign({},r,{text:text,edited:true}):r;
-  });
-  lsSet(key,replies);
-  redrawReplies(si,ni);
-  scriptCall({action:'edit',key:key,id:id,text:text},null);
+  if(repliesEnabled){
+    db.collection(REPLIES_COLLECTION).doc(id).update({text:text,edited:true}).catch(function(e){console.warn('Edit failed:',e);});
+  } else {
+    lsSet(key,lsGet(key).map(function(r){return r.id===id?Object.assign({},r,{text:text,edited:true}):r;}));
+    redrawReplies(si,ni);
+  }
 }
 
 // ── Render ──────────────────────────────────────────────────────
