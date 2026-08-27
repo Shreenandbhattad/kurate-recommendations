@@ -120,7 +120,7 @@
   --accent: #ff6e60;
   --main-soft: rgba(52,17,75,0.07);
   --accent-soft: rgba(255,110,96,0.1);
-  --sidebar-w: 260px;
+  --sidebar-w: 288px;
   --ease: cubic-bezier(.16,1,.3,1);
   --ease-soft: cubic-bezier(.25,.46,.45,.94);
 }
@@ -238,6 +238,9 @@ header{
 }
 .nav-item:hover:not(.active){color:var(--text);background:var(--surface2)}
 .nav-item.active{color:var(--main);font-weight:600}
+.nav-item .nav-label{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .nav-item .badge{
   margin-left:auto;font-size:.58rem;background:var(--surface2);
   border-radius:8px;padding:1px 6px;color:var(--muted);flex-shrink:0;
@@ -279,7 +282,7 @@ header{
 .screen-viewer::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
 .review-card{
-  flex:0 0 min(480px,calc(100vw - 340px));
+  flex:0 0 min(480px,calc(100vw - 368px));
   position:relative;
   display:flex;flex-direction:column;align-items:center;
   gap:18px;scroll-snap-align:center;
@@ -297,7 +300,7 @@ header{
 
 .phone-wrapper{
   position:relative;flex-shrink:0;
-  width:min(250px,calc(100vw - 380px));
+  width:min(250px,calc(100vw - 408px));
   overflow:visible;
   filter:drop-shadow(0 16px 40px rgba(52,17,75,.15));
   transition:filter .3s var(--ease);
@@ -319,17 +322,6 @@ header{
   box-shadow:inset 0 0 0 2px var(--main);
   pointer-events:none;z-index:10
 }
-/* Subtle glossy sheen sweeping across on hover — pure CSS, no JS cost */
-.phone-frame::before{
-  content:'';
-  position:absolute;inset:0;z-index:11;
-  border-radius:inherit;pointer-events:none;
-  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);
-  background-size:250% 250%;
-  background-position:120% 120%;
-  transition:background-position .7s var(--ease);
-}
-.review-card.active-screen .phone-frame:hover::before{background-position:-20% -20%}
 .review-card.active-screen .phone-frame{transform:translateY(-2px)}
 .phone-img{
   width:100%;
@@ -648,8 +640,8 @@ function renderSidebar(){
   screens.forEach((s,i)=>{
     if(s.section!==last){html+=`<div class="section-label">${esc(s.section)}</div>`;last=s.section;}
     const has=s.annotations.length>0;
-    html+=`<button class="nav-item${has?' has-notes':''}${i===currentIdx?' active':''}" type="button" onclick="goTo(${i})" data-idx="${i}">
-      <div class="nav-dot"></div><span>${esc(s.title)}</span>
+    html+=`<button class="nav-item${has?' has-notes':''}${i===currentIdx?' active':''}" type="button" onclick="goTo(${i})" data-idx="${i}" title="${esc(s.title)}">
+      <div class="nav-dot"></div><span class="nav-label">${esc(s.title)}</span>
       ${has?`<span class="badge">${s.annotations.length}</span>`:''}
     </button>`;
   });
