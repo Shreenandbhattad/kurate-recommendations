@@ -920,13 +920,19 @@ function watchReplies(si,ni){
   ensureFirebaseLoaded(function(){
     if(!repliesEnabled)return;
     if(myToken!==_watchToken)return; // superseded by a newer open/close since this started
+    // No .orderBy() here on purpose — combining it with .where() on a
+    // different field requires a manual composite index in Firestore, which
+    // would otherwise silently fail (comments save fine, but the listener
+    // errors out and nothing ever renders). Sorting client-side instead
+    // needs zero index setup, ever.
     _unsubReplies=db.collection(REPLIES_COLLECTION)
-    .where('skey','==',skeyOf(key)).orderBy('ts')
+    .where('skey','==',skeyOf(key))
     .onSnapshot(function(snap){
       var replies=snap.docs.map(function(d){
         var v=d.data();
         return {id:d.id,name:v.name,text:v.text,ts:v.ts,edited:!!v.edited};
       });
+      replies.sort(function(a,b){return a.ts-b.ts;});
       lsSet(key,replies);
       redrawReplies(si,ni);
     },function(err){console.warn('Firestore listen error:',err);});
