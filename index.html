@@ -291,6 +291,10 @@ header{
   /* no contain — allows comment card to overflow card boundary */
   overflow:visible
 }
+/* When the sidebar is collapsed it isn't reserving 288px anymore — let
+   cards actually use that freed-up width instead of staying artificially
+   narrow/off-center as if it were still there. */
+.sidebar.collapsed ~ .main .review-card{flex-basis:min(480px,calc(100vw - 80px))}
 .review-card.active-screen,.review-card:hover{opacity:1;transform:scale(1);z-index:2;position:relative}
 @keyframes card-enter{
   from{opacity:0;transform:scale(.9) translateY(16px)}
@@ -303,9 +307,10 @@ header{
   width:min(250px,calc(100vw - 408px));
   overflow:visible;
   filter:drop-shadow(0 16px 40px rgba(52,17,75,.15));
-  transition:filter .3s var(--ease);
+  transition:filter .3s var(--ease),width .3s var(--ease);
   transform-style:preserve-3d;
 }
+.sidebar.collapsed ~ .main .phone-wrapper{width:min(250px,calc(100vw - 120px))}
 .review-card.active-screen .phone-wrapper:hover{filter:drop-shadow(0 22px 52px rgba(52,17,75,.22))}
 .phone-frame{
   position:relative;overflow:hidden;
@@ -508,7 +513,7 @@ header{
 </header>
 
 <div class="app">
-  <nav class="sidebar" id="sidebar"></nav>
+  <nav class="sidebar collapsed" id="sidebar"></nav>
   <div class="main">
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     <div class="screen-viewer" id="screenViewer"></div>
@@ -575,7 +580,7 @@ const screens = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
-let currentIdx = 0, activePin = null, sidebarOpen = true;
+let currentIdx = 0, activePin = null, sidebarOpen = false;
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
@@ -973,7 +978,6 @@ function addReply(si,ni){
 }
 
 function deleteReply(si,ni,id){
-  if(!confirm('Delete this reply?'))return;
   var key=rKey(si,ni);
   if(repliesEnabled){
     db.collection(REPLIES_COLLECTION).doc(id).delete().catch(function(e){console.warn('Delete failed:',e);});
