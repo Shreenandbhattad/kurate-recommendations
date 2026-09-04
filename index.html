@@ -162,12 +162,12 @@ body{
   animation:aurora-drift-b 22s ease-in-out infinite;
 }
 @keyframes aurora-drift-a{
-  0%,100%{transform:translate(0,0) scale(1)}
-  50%{transform:translate(60px,40px) scale(1.12)}
+  0%,100%{transform:translate(0,0)}
+  50%{transform:translate(60px,40px)}
 }
 @keyframes aurora-drift-b{
-  0%,100%{transform:translate(0,0) scale(1)}
-  50%{transform:translate(-50px,-30px) scale(1.08)}
+  0%,100%{transform:translate(0,0)}
+  50%{transform:translate(-50px,-30px)}
 }
 @media(prefers-reduced-motion:reduce){
   .aurora::before,.aurora::after{animation:none}
@@ -357,28 +357,37 @@ header{
 .pin.content{background:var(--main);color:#fff}
 .pin.ux{background:var(--accent);color:#fff}
 .pin.dev{background:var(--dev);color:#fff}
-.pin.ready:not(.active):not(:hover){animation:pin-pulse 3.4s ease-in-out infinite}
-@keyframes pin-pulse{
-  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 0 rgba(52,17,75,.3)}
-  50%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 4px rgba(52,17,75,0)}
+/* Idle pins get a "ping" ring - transform+opacity only (compositor-cheap),
+   and it only ever runs on the ACTIVE screen's pins. With 55 screens all
+   rendered in the DOM at once, animating box-shadow (a paint-triggering
+   property) on every off-screen pin simultaneously was the single biggest
+   cause of the page feeling laggy - up to 50 elements repainting forever,
+   almost all invisible. Pins outside the active screen just sit static. */
+.pin::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  opacity:0;pointer-events:none
 }
-.pin.ux.ready:not(.active):not(:hover){animation-name:pin-pulse-ux}
-@keyframes pin-pulse-ux{
-  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 0 rgba(255,110,96,.3)}
-  50%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 4px rgba(255,110,96,0)}
+.review-card.active-screen .pin.content.ready:not(.active):not(:hover)::after{
+  background:var(--main);animation:pin-ping 3.4s ease-out infinite
 }
-.pin.dev.ready:not(.active):not(:hover){animation-name:pin-pulse-dev}
-@keyframes pin-pulse-dev{
-  0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 0 rgba(184,134,11,.35)}
-  50%{box-shadow:0 4px 14px rgba(0,0,0,.2),0 0 0 4px rgba(184,134,11,0)}
+.review-card.active-screen .pin.ux.ready:not(.active):not(:hover)::after{
+  background:var(--accent);animation:pin-ping 3.4s ease-out infinite
+}
+.review-card.active-screen .pin.dev.ready:not(.active):not(:hover)::after{
+  background:var(--dev);animation:pin-ping 3.4s ease-out infinite
+}
+@keyframes pin-ping{
+  0%{transform:scale(1);opacity:.45}
+  70%,100%{transform:scale(2.2);opacity:0}
 }
 .pin:hover,.pin.active{
   transform:translate(-50%,-50%) scale(1.2);
   box-shadow:0 8px 24px rgba(0,0,0,.25);
-  opacity:1;animation:none
+  opacity:1
 }
+.pin:hover::after,.pin.active::after{animation:none;opacity:0}
 @media(prefers-reduced-motion:reduce){
-  .pin.ready:not(.active):not(:hover){animation:none}
+  .pin::after{animation:none!important}
 }
 
 /* ── Feedback panel ──────────────────────────────────────── */
@@ -705,7 +714,7 @@ function openFeedback(si,ni){
   closeInline();
 
   // Highlight pin
-  document.querySelectorAll('.pin').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.pin.active').forEach(function(p){p.classList.remove('active');});
   activePin=ni;
   var pinEl=document.getElementById('pin-'+si+'-'+ni);
   if(pinEl)pinEl.classList.add('active');
@@ -739,7 +748,7 @@ function openFeedback(si,ni){
 function closeInline(){
   activePin=null;
   stopWatchingReplies();
-  document.querySelectorAll('.pin').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.pin.active').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.card-popup.open').forEach(function(p){
     p.classList.remove('open');
     setTimeout(function(){
@@ -768,7 +777,15 @@ function setupTilt(){
     frame.style.transition='';
     frame.style.transform='';
   }
-  viewer.addEventListener('mousemove',function(e){
+  // Coalesced to one update per animation frame instead of running on every
+  // raw mousemove — reading getBoundingClientRect() on every single event
+  // (which can fire well over 60x/sec) forces a synchronous layout flush
+  // each time, which is a common source of jank when other things on the
+  // page are also animating.
+  let raf=null, pendingEvent=null;
+  function applyTilt(){
+    raf=null;
+    const e=pendingEvent;
     const frame=e.target.closest('.phone-frame');
     if(!frame)return;
     const r=frame.getBoundingClientRect();
@@ -778,6 +795,10 @@ function setupTilt(){
     const ry=((px-0.5)*MAX*2).toFixed(2);
     frame.style.transition='transform .12s var(--ease)';
     frame.style.transform='perspective(1400px) rotateX('+rx+'deg) rotateY('+ry+'deg)';
+  }
+  viewer.addEventListener('mousemove',function(e){
+    pendingEvent=e;
+    if(raf===null)raf=requestAnimationFrame(applyTilt);
   },{passive:true});
   viewer.addEventListener('mouseout',function(e){
     const from=e.target.closest&&e.target.closest('.phone-frame');
