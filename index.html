@@ -536,7 +536,7 @@ header{
     <span class="site-title">Kurate Recommendations: UX Research Feedback</span>
   </div>
   <div class="legend">
-    <div class="legend-item"><div class="dot content"></div>Feature / Content</div>
+    <div class="legend-item"><div class="dot content"></div>Copy Edit</div>
     <div class="legend-item"><div class="dot ux"></div>UI / UX</div>
     <div class="legend-item"><div class="dot dev"></div>Dev / Bug</div>
   </div>
@@ -743,7 +743,7 @@ function openFeedback(si,ni){
   // Build content
   cpopup.innerHTML='<article class="comment-card">'
     +'<div class="comment-top"><div>'
-    +'<div class="comment-type '+note.type+'">'+(note.type==='content'?'Feature / Content':note.type==='dev'?'Dev / Bug':'UI / UX')+'</div>'
+    +'<div class="comment-type '+note.type+'">'+(note.type==='content'?'Copy Edit':note.type==='dev'?'Dev / Bug':'UI / UX')+'</div>'
     +'<div class="comment-title">'+esc(note.label)+'</div>'
     +'</div><button class="comment-close" type="button" onclick="closeInline()">&#x2715;</button></div>'
     +'<div class="comment-label">What</div><div class="comment-copy">'+esc(note.what)+'</div>'
