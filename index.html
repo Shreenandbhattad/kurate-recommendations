@@ -299,6 +299,16 @@ header{
    narrow/off-center as if it were still there. */
 .sidebar.collapsed ~ .main .review-card{flex-basis:min(480px,calc(100vw - 80px))}
 .review-card.active-screen,.review-card:hover{opacity:1;transform:scale(1);z-index:2;position:relative}
+/* Every .review-card sets opacity + transform even at rest, and both of
+   those create a new stacking context on their own - so a popup's own
+   z-index:100 only ever wins WITHIN its own card, never over a sibling
+   card that outranks it. If you open a pin on a side (non-active) card
+   and its popup overflows toward the centered card, the centered card
+   (z-index:2) was painting over the popup - including its own close
+   button, which still worked in the DOM but was visually unclickable.
+   This class outranks every other card, active or not, for as long as
+   its popup is open. */
+.review-card.has-open-popup{z-index:6;opacity:1;transform:scale(1)}
 @keyframes card-enter{
   from{opacity:0;transform:scale(.9) translateY(16px)}
 }
@@ -708,7 +718,10 @@ function positionPopup(si,ni){
 
 function openFeedback(si,ni){
   var note=screens[si].annotations[ni];if(!note)return;
-  setCurrent(si,false);
+  // A pin on a peeking side card is still clickable without centering that
+  // card first - scroll it into place when that happens, instead of just
+  // marking it "active" (full brightness) while it stays off to the side.
+  setCurrent(si,si!==currentIdx);
 
   // Close any already-open popups
   closeInline();
@@ -721,6 +734,11 @@ function openFeedback(si,ni){
 
   var cpopup=document.getElementById('cpopup-'+si);
   if(!cpopup)return;
+
+  // Elevate this card above every sibling for as long as its popup is open -
+  // see the has-open-popup rule for why this is load-bearing, not cosmetic.
+  var ownerCard=document.getElementById('screen-'+si);
+  if(ownerCard)ownerCard.classList.add('has-open-popup');
 
   // Build content
   cpopup.innerHTML='<article class="comment-card">'
@@ -752,7 +770,14 @@ function closeInline(){
   document.querySelectorAll('.card-popup.open').forEach(function(p){
     p.classList.remove('open');
     setTimeout(function(){
-      if(!p.classList.contains('open')){p.style.display='none';p.innerHTML='';}
+      if(!p.classList.contains('open')){
+        p.style.display='none';p.innerHTML='';
+        // Card only loses its elevated stacking once its popup is actually
+        // gone - drop it earlier and the fade-out itself gets covered by
+        // a neighboring card mid-close.
+        var ownerCard=p.closest('.review-card');
+        if(ownerCard)ownerCard.classList.remove('has-open-popup');
+      }
     },280);
   });
 }
@@ -813,14 +838,21 @@ function setupScroll(){
   viewer.addEventListener('scroll',()=>{
     if(tick)return;tick=true;
     requestAnimationFrame(()=>{
-      const cx=viewer.getBoundingClientRect().left+viewer.clientWidth/2;
-      let best=currentIdx,bestD=Infinity;
-      document.querySelectorAll('.review-card').forEach(card=>{
-        const r=card.getBoundingClientRect();
-        const d=Math.abs((r.left+r.width/2)-cx);
-        if(d<bestD){bestD=d;best=Number(card.dataset.screenIndex);}
-      });
-      if(best!==currentIdx){closeInline();setCurrent(best,false);}
+      // While a popup is open (including mid-flight while its own card is
+      // being smooth-scrolled into center), don't let this passive
+      // recentering logic fight it — an intermediate card can briefly look
+      // "more centered" than the target while the scroll is still animating,
+      // which would close the popup we just opened a moment after opening it.
+      if(activePin===null){
+        const cx=viewer.getBoundingClientRect().left+viewer.clientWidth/2;
+        let best=currentIdx,bestD=Infinity;
+        document.querySelectorAll('.review-card').forEach(card=>{
+          const r=card.getBoundingClientRect();
+          const d=Math.abs((r.left+r.width/2)-cx);
+          if(d<bestD){bestD=d;best=Number(card.dataset.screenIndex);}
+        });
+        if(best!==currentIdx){closeInline();setCurrent(best,false);}
+      }
       tick=false;
     });
   },{passive:true});
