@@ -955,6 +955,13 @@ function ensureFirebaseLoaded(cb){
         firebase.initializeApp(FIREBASE_CONFIG);
         db=firebase.firestore();
         repliesEnabled=true;
+        // Queues writes in IndexedDB so a reply already survives an
+        // immediate page reload even if the network round-trip to Firestore
+        // hasn't finished yet — without this, a send-then-refresh a moment
+        // later could lose a reply that was still in flight.
+        db.enablePersistence({synchronizeTabs:true}).catch(function(e){
+          console.warn('Offline persistence unavailable (multiple tabs open, or browser doesn\'t support it) — replies still work, just without the reload safety net:',e);
+        });
       }catch(e){console.warn('Firebase init failed — falling back to localStorage:',e);}
       flush();
     };
@@ -1014,6 +1021,20 @@ function stopWatchingReplies(){
 }
 
 // ── CRUD ───────────────────────────────────────────────────────
+function replyError(si,ni,msg){
+  var add=document.querySelector('#cpopup-'+si+' .reply-add');
+  if(!add)return;
+  var el=add.parentNode.querySelector('.reply-error');
+  if(!el){
+    el=document.createElement('div');
+    el.className='reply-error';
+    el.style.cssText='color:#c0392b;font-size:12px;margin:2px 0 4px;';
+    add.parentNode.insertBefore(el,add);
+  }
+  el.textContent=msg;
+  positionPopup(si,ni);
+}
+
 function addReply(si,ni){
   var nameEl=document.getElementById('rname-'+si+'-'+ni);
   var msgEl=document.getElementById('rmsg-'+si+'-'+ni);
@@ -1022,18 +1043,26 @@ function addReply(si,ni){
   var text=(msgEl.value||'').trim();
   if(!text)return;
   var key=rKey(si,ni);
-  msgEl.value='';
   try{localStorage.setItem('kurate_last_name',name);}catch(e){}
 
   if(repliesEnabled){
+    // Don't clear the box until the write actually succeeds — clearing it
+    // eagerly meant a failed save (offline, blocked request, etc.) silently
+    // wiped what was typed with only a console warning to show for it.
     db.collection(REPLIES_COLLECTION).add({
       skey:skeyOf(key),site:REPLIES_SITE,key:key,
       name:name,text:text,ts:Date.now(),edited:false
-    }).catch(function(e){console.warn('Add reply failed:',e);});
+    }).then(function(){
+      msgEl.value='';
+    }).catch(function(e){
+      console.warn('Add reply failed:',e);
+      replyError(si,ni,"Couldn't save — check your connection and try again.");
+    });
     // The onSnapshot listener above repaints instantly (Firestore echoes
     // local writes before the server round-trip completes) — no manual
     // optimistic-update bookkeeping needed.
   } else {
+    msgEl.value='';
     var replies=lsGet(key);
     replies.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:name,text:text,ts:Date.now()});
     lsSet(key,replies);
@@ -1044,7 +1073,10 @@ function addReply(si,ni){
 function deleteReply(si,ni,id){
   var key=rKey(si,ni);
   if(repliesEnabled){
-    db.collection(REPLIES_COLLECTION).doc(id).delete().catch(function(e){console.warn('Delete failed:',e);});
+    db.collection(REPLIES_COLLECTION).doc(id).delete().catch(function(e){
+      console.warn('Delete failed:',e);
+      replyError(si,ni,"Couldn't delete — check your connection and try again.");
+    });
   } else {
     lsSet(key,lsGet(key).filter(function(r){return r.id!==id;}));
     redrawReplies(si,ni);
@@ -1078,7 +1110,10 @@ function saveEdit(si,ni,id){
   if(!text)return;
   var key=rKey(si,ni);
   if(repliesEnabled){
-    db.collection(REPLIES_COLLECTION).doc(id).update({text:text,edited:true}).catch(function(e){console.warn('Edit failed:',e);});
+    db.collection(REPLIES_COLLECTION).doc(id).update({text:text,edited:true}).catch(function(e){
+      console.warn('Edit failed:',e);
+      replyError(si,ni,"Couldn't save the edit — check your connection and try again.");
+    });
   } else {
     lsSet(key,lsGet(key).map(function(r){return r.id===id?Object.assign({},r,{text:text,edited:true}):r;}));
     redrawReplies(si,ni);
