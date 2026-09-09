@@ -622,6 +622,14 @@ function linkify(text,links){
   });
   return breaks(out);
 }
+// True only when the label says something the note text does not already open with.
+function titleAddsMeaning(note){
+  if(!note.label) return false;
+  var norm=function(s){return String(s).replace(/[“”"']/g,'').replace(/\s+/g,' ').trim().toLowerCase();};
+  var lab=norm(note.label).replace(/…$/,'').trim();
+  var body=norm(note.what).replace(/^(heading|header|headline|subtext|button)\s*[-:]\s*/,'');
+  return lab.length>0 && body.indexOf(lab)!==0;
+}
 // The deck writes notes as headed lines and bullet lists, so keep that shape:
 // a blank line is a paragraph gap, a single newline is a line break.
 function breaks(escaped){
@@ -760,7 +768,10 @@ function openFeedback(si,ni){
   cpopup.innerHTML='<article class="comment-card">'
     +'<div class="comment-top"><div>'
     +'<div class="comment-type '+note.type+'">'+(note.type==='content'?'Copy Edit':note.type==='dev'?'Dev / Bug':'UI / UX')+'</div>'
-    +'<div class="comment-title">'+esc(note.label)+'</div>'
+    // The deck gives notes no titles, so labels are derived from the note text
+    // and exist for the pin tooltip. Showing one above text it was cut from
+    // just prints the same sentence twice, so drop it in that case.
+    +(titleAddsMeaning(note)?'<div class="comment-title">'+esc(note.label)+'</div>':'')
     +'</div><button class="comment-close" type="button" onclick="closeInline()">&#x2715;</button></div>'
     // What / Why headings belong to Copy Edit notes only - UI/UX and Dev notes
     // are a single observation, so they read better with no heading at all.
